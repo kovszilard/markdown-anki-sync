@@ -3,7 +3,6 @@
 ## Rust Best Practices
 
 - Use `cargo fmt` before committing
-- Use `cargo clippy` to catch common mistakes
 - Prefer returning `Result` or `Option` over panicking
 - Use `#[cfg(test)] mod tests` inline for unit tests
 - Use the `tests/` directory for integration tests
@@ -18,6 +17,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 Types:
+
 - `feat`: new feature
 - `fix`: bug fix
 - `refactor`: code change that neither fixes a bug nor adds a feature
