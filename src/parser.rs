@@ -1,8 +1,21 @@
 use regex::Regex;
+use std::{error::Error, fs::File, io::Read};
 
 struct FrontMatter {
     deck: String,
     tags: Vec<String>,
+}
+
+enum TextPosition {
+    FrontMatterPosition {
+        start_line: u32,
+        end_line: Option<u32>,
+    },
+    FlashCardMetadataPosition(u32),
+    FlashCardPosition {
+        start_line: u32,
+        end_line: Option<u32>,
+    },
 }
 
 // <!-- anki_sync: false, anki_id: 12345, anki_deck: Default, anki_tags: [tag1, tag2, ...] -->
@@ -104,6 +117,26 @@ fn parse_flashcard_in_markdown(lines: &str) -> Option<FlashCard> {
         back: back.to_string(),
     })
 }
+
+fn parse_a<A>(line: &str) -> Option<A> {
+    todo!()
+}
+
+fn parse_b<A>(lines: Vec<&str>) -> Option<A> {
+    todo!()
+}
+
+fn parse_c<A>(lines: Vec<&str>) -> Option<A> {
+    todo!()
+}
+
+// fn process_file(path: &str) -> Result<(), Box<dyn Error>> {
+//     let lines: Vec<&str> = std::fs::read_to_string(path)?.lines().collect();
+//
+//     // lines.iter().enumerate().
+//     lines.lines.fold
+//     Ok(())
+// }
 
 #[cfg(test)]
 mod tests {
