@@ -1,9 +1,9 @@
 use nom::{
-    AsChar, IResult, Parser,
+    IResult, Parser,
     branch::alt,
     bytes::complete::{tag, take_while},
     character::complete::space0,
-    character::complete::{alpha1, digit1},
+    character::complete::{alpha1, alphanumeric1, digit1},
     combinator::{map_res, value},
     multi::separated_list1,
     sequence::{delimited, preceded},
@@ -13,12 +13,14 @@ pub struct FlashCardMetaData {
     pub id: Option<u32>,
     pub sync: Option<bool>,
     pub deck: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 enum Field<'a> {
     Id(u32),
     Sync(bool),
     Deck(&'a str),
+    Tags(Vec<&'a str>),
 }
 
 // value parsers
@@ -28,7 +30,7 @@ pub fn parse_u32_digits(input: &str) -> IResult<&str, u32> {
 
 pub fn parse_word_or_quoted_string(input: &str) -> IResult<&str, &str> {
     alt((
-        alpha1,
+        alphanumeric1,
         delimited(tag("\""), take_while(|c| c != '"' && c != '\n'), tag("\"")),
     ))
     .parse(input)
@@ -59,12 +61,26 @@ pub fn parse_anki_sync(input: &str) -> IResult<&str, bool> {
     parse_key_value("anki_sync", parse_bool).parse(input)
 }
 
+pub fn parse_list(input: &str) -> IResult<&str, Vec<&str>> {
+    delimited(
+        (tag("["), space0),
+        separated_list1((space0, tag(","), space0), parse_word_or_quoted_string),
+        (space0, tag("]")),
+    )
+    .parse(input)
+}
+
+pub fn parse_anki_tags(input: &str) -> IResult<&str, Vec<&str>> {
+    parse_key_value("anki_tags", parse_list).parse(input)
+}
+
 // parse specific fields
 fn parse_field(input: &str) -> IResult<&str, Field> {
     alt((
         |i| parse_anki_id(i).map(|(r, v)| (r, Field::Id(v))),
         |i| parse_anki_sync(i).map(|(r, v)| (r, Field::Sync(v))),
         |i| parse_anki_deck(i).map(|(r, v)| (r, Field::Deck(v))),
+        |i| parse_anki_tags(i).map(|(r, v)| (r, Field::Tags(v))),
     ))
     .parse(input)
 }
@@ -82,6 +98,7 @@ pub fn parse_flashcard_metadata(input: &str) -> IResult<&str, FlashCardMetaData>
         id: None,
         sync: None,
         deck: None,
+        tags: None,
     };
 
     for f in fields {
@@ -89,6 +106,7 @@ pub fn parse_flashcard_metadata(input: &str) -> IResult<&str, FlashCardMetaData>
             Field::Id(v) => metadata.id = Some(v),
             Field::Sync(v) => metadata.sync = Some(v),
             Field::Deck(v) => metadata.deck = Some(v.to_string()),
+            Field::Tags(v) => metadata.tags = Some(v.into_iter().map(String::from).collect()),
         }
     }
 
@@ -153,5 +171,45 @@ mod tests {
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "some more text");
         assert_eq!(meta.id, Some(1));
+    }
+
+    #[test]
+    fn test_tags_basic() {
+        let input = "<!-- anki_tags: [tag1,tag2,tag3] -->";
+        let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
+        assert_eq!(rest, "");
+        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag2".to_string(), "tag3".to_string()]));
+    }
+
+    #[test]
+    fn test_tags_with_quoted_strings() {
+        let input = r#"<!-- anki_tags: [tag1, "tag two", tag3] -->"#;
+        let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
+        assert_eq!(rest, "");
+        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag two".to_string(), "tag3".to_string()]));
+    }
+
+    #[test]
+    fn test_tags_with_extra_whitespace() {
+        let input = "<!-- anki_tags: [  tag1 ,  tag2  ,   tag3  ] -->";
+        let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
+        assert_eq!(rest, "");
+        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag2".to_string(), "tag3".to_string()]));
+    }
+
+    #[test]
+    fn test_tags_with_other_fields() {
+        let input = r#"<!-- anki_id: 5, anki_tags: [foo, "bar baz"], anki_sync: true -->"#;
+        let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
+        assert_eq!(rest, "");
+        assert_eq!(meta.id, Some(5));
+        assert_eq!(meta.sync, Some(true));
+        assert_eq!(meta.tags, Some(vec!["foo".to_string(), "bar baz".to_string()]));
+    }
+
+    #[test]
+    fn test_tags_empty_list_fails() {
+        let input = "<!-- anki_tags: [] -->";
+        assert!(parse_flashcard_metadata(input).is_err());
     }
 }
