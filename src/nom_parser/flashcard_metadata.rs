@@ -24,11 +24,11 @@ enum Field<'a> {
 }
 
 // value parsers
-pub fn parse_u32_digits(input: &str) -> IResult<&str, u32> {
+fn parse_u32_digits(input: &str) -> IResult<&str, u32> {
     map_res(digit1, |s: &str| s.parse::<u32>()).parse(input)
 }
 
-pub fn parse_word_or_quoted_string(input: &str) -> IResult<&str, &str> {
+fn parse_word_or_quoted_string(input: &str) -> IResult<&str, &str> {
     alt((
         alphanumeric1,
         delimited(tag("\""), take_while(|c| c != '"' && c != '\n'), tag("\"")),
@@ -36,12 +36,12 @@ pub fn parse_word_or_quoted_string(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-pub fn parse_bool(input: &str) -> IResult<&str, bool> {
+fn parse_bool(input: &str) -> IResult<&str, bool> {
     alt((value(true, tag("true")), value(false, tag("false")))).parse(input)
 }
 
 // key: value pair parser
-pub fn parse_key_value<'a, O>(
+fn parse_key_value<'a, O>(
     key: &'a str,
     value_parser: impl Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>>,
 ) -> impl Parser<&'a str, Output = O, Error = nom::error::Error<&'a str>> {
@@ -49,19 +49,19 @@ pub fn parse_key_value<'a, O>(
 }
 
 // parsers for specific keys
-pub fn parse_anki_id(input: &str) -> IResult<&str, u32> {
+fn parse_anki_id(input: &str) -> IResult<&str, u32> {
     parse_key_value("anki_id", parse_u32_digits).parse(input)
 }
 
-pub fn parse_anki_deck(input: &str) -> IResult<&str, &str> {
+fn parse_anki_deck(input: &str) -> IResult<&str, &str> {
     parse_key_value("anki_deck", parse_word_or_quoted_string).parse(input)
 }
 
-pub fn parse_anki_sync(input: &str) -> IResult<&str, bool> {
+fn parse_anki_sync(input: &str) -> IResult<&str, bool> {
     parse_key_value("anki_sync", parse_bool).parse(input)
 }
 
-pub fn parse_list(input: &str) -> IResult<&str, Vec<&str>> {
+fn parse_list(input: &str) -> IResult<&str, Vec<&str>> {
     delimited(
         (tag("["), space0),
         separated_list1((space0, tag(","), space0), parse_word_or_quoted_string),
@@ -70,7 +70,7 @@ pub fn parse_list(input: &str) -> IResult<&str, Vec<&str>> {
     .parse(input)
 }
 
-pub fn parse_anki_tags(input: &str) -> IResult<&str, Vec<&str>> {
+fn parse_anki_tags(input: &str) -> IResult<&str, Vec<&str>> {
     parse_key_value("anki_tags", parse_list).parse(input)
 }
 
@@ -94,21 +94,18 @@ pub fn parse_flashcard_metadata(input: &str) -> IResult<&str, FlashCardMetaData>
     )
     .parse(input)?;
 
-    let mut metadata = FlashCardMetaData {
-        id: None,
-        sync: None,
-        deck: None,
-        tags: None,
-    };
-
-    for f in fields {
-        match f {
-            Field::Id(v) => metadata.id = Some(v),
-            Field::Sync(v) => metadata.sync = Some(v),
-            Field::Deck(v) => metadata.deck = Some(v.to_string()),
-            Field::Tags(v) => metadata.tags = Some(v.into_iter().map(String::from).collect()),
-        }
-    }
+    let metadata = fields.into_iter().fold(
+        FlashCardMetaData { id: None, sync: None, deck: None, tags: None },
+        |mut meta, f| {
+            match f {
+                Field::Id(v) => meta.id = Some(v),
+                Field::Sync(v) => meta.sync = Some(v),
+                Field::Deck(v) => meta.deck = Some(v.to_string()),
+                Field::Tags(v) => meta.tags = Some(v.into_iter().map(String::from).collect()),
+            }
+            meta
+        },
+    );
 
     Ok((input, metadata))
 }
