@@ -95,7 +95,12 @@ pub fn parse_flashcard_metadata(input: &str) -> IResult<&str, FlashCardMetaData>
     .parse(input)?;
 
     let metadata = fields.into_iter().fold(
-        FlashCardMetaData { id: None, sync: None, deck: None, tags: None },
+        FlashCardMetaData {
+            id: None,
+            sync: None,
+            deck: None,
+            tags: None,
+        },
         |mut meta, f| {
             match f {
                 Field::Id(v) => meta.id = Some(v),
@@ -175,7 +180,14 @@ mod tests {
         let input = "<!-- anki_tags: [tag1,tag2,tag3] -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
-        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag2".to_string(), "tag3".to_string()]));
+        assert_eq!(
+            meta.tags,
+            Some(vec![
+                "tag1".to_string(),
+                "tag2".to_string(),
+                "tag3".to_string()
+            ])
+        );
     }
 
     #[test]
@@ -183,7 +195,14 @@ mod tests {
         let input = r#"<!-- anki_tags: [tag1, "tag two", tag3] -->"#;
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
-        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag two".to_string(), "tag3".to_string()]));
+        assert_eq!(
+            meta.tags,
+            Some(vec![
+                "tag1".to_string(),
+                "tag two".to_string(),
+                "tag3".to_string()
+            ])
+        );
     }
 
     #[test]
@@ -191,7 +210,14 @@ mod tests {
         let input = "<!-- anki_tags: [  tag1 ,  tag2  ,   tag3  ] -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
-        assert_eq!(meta.tags, Some(vec!["tag1".to_string(), "tag2".to_string(), "tag3".to_string()]));
+        assert_eq!(
+            meta.tags,
+            Some(vec![
+                "tag1".to_string(),
+                "tag2".to_string(),
+                "tag3".to_string()
+            ])
+        );
     }
 
     #[test]
@@ -201,7 +227,10 @@ mod tests {
         assert_eq!(rest, "");
         assert_eq!(meta.id, Some(5));
         assert_eq!(meta.sync, Some(true));
-        assert_eq!(meta.tags, Some(vec!["foo".to_string(), "bar baz".to_string()]));
+        assert_eq!(
+            meta.tags,
+            Some(vec!["foo".to_string(), "bar baz".to_string()])
+        );
     }
 
     #[test]
