@@ -1,8 +1,3 @@
-struct FrontMatter {
-    deck: String,
-    tags: Vec<String>,
-}
-
 // struct MarkdonwDocument {
 //     front_matter: Option<FrontMatter>,
 //     flashcards: Vec<FlashCardInMarkdown>,
@@ -10,3 +5,4 @@ struct FrontMatter {
 
 mod flashcard;
 mod flashcard_metadata;
+mod front_matter;
