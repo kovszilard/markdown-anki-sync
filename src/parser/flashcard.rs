@@ -8,9 +8,9 @@ use nom::{
 };
 
 pub struct FlashCard {
+    pub raw: String,
     pub front: String,
     pub back: String,
-    pub header_level: u8,
 }
 
 fn parse_header_hashes(input: &str) -> IResult<&str, u8> {
@@ -55,14 +55,16 @@ fn parse_back(input: &str, header_level: u8) -> IResult<&str, &str> {
 }
 
 pub fn parse_flashcard(input: &str) -> IResult<&str, FlashCard> {
+    let start = input;
     let (input, (front_text, header_level)) = parse_front(input)?;
     let (input, back_text) = parse_back(input, header_level)?;
+    let raw = &start[..start.len() - input.len()];
     Ok((
         input,
         FlashCard {
+            raw: raw.to_string(),
             front: front_text.to_string(),
             back: back_text.to_string(),
-            header_level,
         },
     ))
 }
@@ -94,7 +96,6 @@ mod tests {
         let (rest, card) = parse_flashcard(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(card.front, "What is Rust?");
-        assert_eq!(card.header_level, 2);
         assert_eq!(
             card.back,
             indoc! {"
@@ -102,6 +103,7 @@ mod tests {
                 It focuses on safety and performance.
             "}
         );
+        assert_eq!(card.raw, input);
     }
 
     #[test]
@@ -115,6 +117,7 @@ mod tests {
         assert_eq!(card.front, "First question");
         assert_eq!(card.back, "Answer to first.\n");
         assert_eq!(rest, "## Next header\n");
+        assert_eq!(card.raw, "## Q: First question\nAnswer to first.\n");
     }
 
     #[test]
@@ -189,6 +192,7 @@ mod tests {
         assert_eq!(rest, "");
         assert_eq!(card.front, "Question");
         assert_eq!(card.back, "Answer without trailing newline");
+        assert_eq!(card.raw, input);
     }
 
     #[test]
@@ -206,7 +210,6 @@ mod tests {
         let (rest, card) = parse_flashcard(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(card.front, "Top level");
-        assert_eq!(card.header_level, 1);
         assert_eq!(card.back, "Answer\n");
     }
 
