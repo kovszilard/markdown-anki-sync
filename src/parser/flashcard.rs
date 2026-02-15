@@ -54,17 +54,46 @@ fn parse_back(input: &str, header_level: u8) -> IResult<&str, &str> {
     recognize(many1(non_terminator_line(header_level))).parse(input)
 }
 
+/// Trims leading and trailing blank lines from a string, preserving interior blank lines.
+/// Returns a sub-slice of the input (zero-copy).
+fn trim_blank_lines(s: &str) -> &str {
+    // Find first non-whitespace character, then back up to start of its line
+    let start = match s.find(|c: char| !c.is_whitespace()) {
+        Some(pos) => s[..pos].rfind('\n').map_or(0, |nl| nl + 1),
+        None => return "",
+    };
+
+    // Find last non-whitespace character, then advance to end of its line (including \n)
+    let end = match s.rfind(|c: char| !c.is_whitespace()) {
+        Some(pos) => {
+            // unwrap is safe: pos is the start of a valid char from rfind
+            let after = pos + s[pos..].chars().next().unwrap().len_utf8();
+            s[after..].find('\n').map_or(s.len(), |nl| after + nl + 1)
+        }
+        None => return "",
+    };
+
+    &s[start..end]
+}
+
 pub fn parse_flashcard(input: &str) -> IResult<&str, FlashCard> {
     let start = input;
     let (input, (front_text, header_level)) = parse_front(input)?;
     let (input, back_text) = parse_back(input, header_level)?;
+    let trimmed_back = trim_blank_lines(back_text);
+    if trimmed_back.is_empty() {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Verify,
+        )));
+    }
     let raw = &start[..start.len() - input.len()];
     Ok((
         input,
         FlashCard {
             raw: raw.to_string(),
             front: front_text.to_string(),
-            back: back_text.to_string(),
+            back: trimmed_back.to_string(),
         },
     ))
 }
@@ -220,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn test_back_with_blank_lines_preserved() {
+    fn test_back_with_interior_blank_lines_preserved() {
         let input = indoc! {"
             ## Q: Blank lines
             First paragraph.
@@ -246,6 +275,69 @@ mod tests {
     #[test]
     fn test_header_level_above_6_rejected() {
         let input = "####### Q: Too deep\nBody\n";
+        assert!(parse_flashcard(input).is_err());
+    }
+
+    #[test]
+    fn test_leading_blank_lines_stripped_from_back() {
+        let input = indoc! {"
+            ## Q: Leading blanks
+
+
+            Actual answer.
+        "};
+        let (rest, card) = parse_flashcard(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(card.back, "Actual answer.\n");
+        assert_eq!(card.raw, input);
+    }
+
+    #[test]
+    fn test_trailing_blank_lines_stripped_from_back() {
+        let input = indoc! {"
+            ## Q: Trailing blanks
+            Actual answer.
+
+
+        "};
+        let (rest, card) = parse_flashcard(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(card.back, "Actual answer.\n");
+        assert_eq!(card.raw, input);
+    }
+
+    #[test]
+    fn test_leading_and_trailing_blank_lines_stripped_interior_preserved() {
+        let input = indoc! {"
+            ## Q: Both ends trimmed
+
+            First paragraph.
+
+            Second paragraph.
+
+        "};
+        let (rest, card) = parse_flashcard(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(
+            card.back,
+            indoc! {"
+                First paragraph.
+
+                Second paragraph.
+            "}
+        );
+        assert_eq!(card.raw, input);
+    }
+
+    #[test]
+    fn test_back_with_only_blank_lines_rejected() {
+        let input = indoc! {"
+            ## Q: Blank back
+
+
+
+            ## Next header
+        "};
         assert!(parse_flashcard(input).is_err());
     }
 }
