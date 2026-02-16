@@ -1,10 +1,6 @@
-// struct MarkdonwDocument {
-//     front_matter: Option<FrontMatter>,
-//     flashcards: Vec<FlashCardInMarkdown>,
-// }
-
 pub mod blank_line;
-mod flashcard;
-mod flashcard_metadata;
-mod front_matter;
-mod uninterested_block;
+pub mod document;
+pub mod flashcard;
+pub mod flashcard_metadata;
+pub mod front_matter;
+pub mod uninterested_block;
