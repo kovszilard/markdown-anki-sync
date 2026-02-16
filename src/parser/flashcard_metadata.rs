@@ -76,7 +76,7 @@ fn parse_anki_tags(input: &str) -> IResult<&str, Vec<&str>> {
 }
 
 // parse specific fields
-fn parse_field(input: &str) -> IResult<&str, Field> {
+fn parse_field(input: &str) -> IResult<&str, Field<'_>> {
     alt((
         |i| parse_anki_id(i).map(|(r, v)| (r, Field::Id(v))),
         |i| parse_anki_sync(i).map(|(r, v)| (r, Field::Sync(v))),
