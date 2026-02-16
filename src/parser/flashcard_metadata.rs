@@ -2,14 +2,15 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::complete::{tag, take_while},
-    character::complete::space0,
-    character::complete::{alpha1, alphanumeric1, digit1},
-    combinator::{map_res, value},
+    character::complete::{alphanumeric1, digit1},
+    character::complete::{line_ending, not_line_ending, space0},
+    combinator::{eof, map_res, recognize, value},
     multi::separated_list1,
     sequence::{delimited, preceded},
 };
 
 pub struct FlashCardMetaData {
+    pub raw: String,
     pub id: Option<u32>,
     pub sync: Option<bool>,
     pub deck: Option<String>,
@@ -87,15 +88,21 @@ fn parse_field(input: &str) -> IResult<&str, Field> {
 
 // parse the entire metadata comment
 pub fn parse_flashcard_metadata(input: &str) -> IResult<&str, FlashCardMetaData> {
+    let start = input;
     let (input, fields) = delimited(
         (tag("<!--"), space0),
         separated_list1((space0, tag(","), space0), parse_field),
         (space0, tag("-->")),
     )
     .parse(input)?;
+    let (input, _) = not_line_ending(input)?;
+    let (input, _) = alt((recognize(line_ending), eof)).parse(input)?;
+
+    let raw = &start[..start.len() - input.len()];
 
     let metadata = fields.into_iter().fold(
         FlashCardMetaData {
+            raw: raw.to_string(),
             id: None,
             sync: None,
             deck: None,
@@ -133,6 +140,7 @@ mod tests {
         let input = "<!-- anki_id: 1234, anki_sync: true, anki_deck: hello -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(meta.id, Some(1234));
         assert_eq!(meta.sync, Some(true));
         assert_eq!(meta.deck.as_deref(), Some("hello"));
@@ -143,6 +151,7 @@ mod tests {
         let input = "<!-- anki_deck: \"My Deck\", anki_id: 42, anki_sync: false -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(meta.id, Some(42));
         assert_eq!(meta.sync, Some(false));
         assert_eq!(meta.deck.as_deref(), Some("My Deck"));
@@ -153,6 +162,7 @@ mod tests {
         let input = "<!-- anki_sync: true -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(meta.id, None);
         assert_eq!(meta.sync, Some(true));
         assert_eq!(meta.deck, None);
@@ -163,6 +173,7 @@ mod tests {
         let input = "<!--   anki_id :  99 ,  anki_sync :  false   -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(meta.id, Some(99));
         assert_eq!(meta.sync, Some(false));
     }
@@ -171,7 +182,17 @@ mod tests {
     fn test_trailing_input() {
         let input = "<!-- anki_id: 1 -->some more text";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
-        assert_eq!(rest, "some more text");
+        assert_eq!(rest, "");
+        assert_eq!(meta.raw, "<!-- anki_id: 1 -->some more text");
+        assert_eq!(meta.id, Some(1));
+    }
+
+    #[test]
+    fn test_trailing_newline() {
+        let input = "<!-- anki_id: 1 -->\nnext line";
+        let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
+        assert_eq!(rest, "next line");
+        assert_eq!(meta.raw, "<!-- anki_id: 1 -->\n");
         assert_eq!(meta.id, Some(1));
     }
 
@@ -180,6 +201,7 @@ mod tests {
         let input = "<!-- anki_tags: [tag1,tag2,tag3] -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(
             meta.tags,
             Some(vec![
@@ -195,6 +217,7 @@ mod tests {
         let input = r#"<!-- anki_tags: [tag1, "tag two", tag3] -->"#;
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(
             meta.tags,
             Some(vec![
@@ -210,6 +233,7 @@ mod tests {
         let input = "<!-- anki_tags: [  tag1 ,  tag2  ,   tag3  ] -->";
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(
             meta.tags,
             Some(vec![
@@ -225,6 +249,7 @@ mod tests {
         let input = r#"<!-- anki_id: 5, anki_tags: [foo, "bar baz"], anki_sync: true -->"#;
         let (rest, meta) = parse_flashcard_metadata(input).expect("Should parse");
         assert_eq!(rest, "");
+        assert_eq!(meta.raw, input);
         assert_eq!(meta.id, Some(5));
         assert_eq!(meta.sync, Some(true));
         assert_eq!(
