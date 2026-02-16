@@ -1,13 +1,13 @@
 use nom::{
     IResult, Parser,
     branch::alt,
-    bytes::complete::tag,
     character::complete::{line_ending, not_line_ending},
     combinator::{eof, not, recognize, rest},
     multi::many1,
 };
 
 use super::flashcard::parse_flashcard;
+use super::flashcard_metadata::parse_flashcard_metadata;
 
 pub struct UninterestedBlock {
     pub raw: String,
@@ -16,7 +16,7 @@ pub struct UninterestedBlock {
 fn non_special_line(input: &str) -> IResult<&str, &str> {
     let (input, _) = not(eof).parse(input)?;
     let (input, _) = not(parse_flashcard).parse(input)?;
-    let (input, _) = not(tag::<&str, &str, nom::error::Error<&str>>("<!--")).parse(input)?;
+    let (input, _) = not(parse_flashcard_metadata).parse(input)?;
     alt((recognize((not_line_ending, line_ending)), rest)).parse(input)
 }
 
@@ -128,5 +128,17 @@ mod tests {
     fn test_rejects_metadata_at_start() {
         let input = "<!-- anki_id: 1 -->";
         assert!(parse_uninterested_block(input).is_err());
+    }
+
+    #[test]
+    fn test_regular_html_comment_consumed() {
+        let input = indoc! {"
+            Some text.
+            <!-- this is a regular comment -->
+            More text.
+        "};
+        let (rest, block) = parse_uninterested_block(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(block.raw, input);
     }
 }

@@ -255,4 +255,56 @@ mod tests {
 
         assert_eq!(reconstructed, input);
     }
+
+    #[test]
+    fn test_round_trip_with_regular_html_comment() {
+        let input = indoc! {"
+            # Introduction
+
+            Some intro text.
+            <!-- this is a regular HTML comment -->
+            More text.
+
+            <!-- anki_id: 1, anki_sync: true -->
+            ## Q: What is Rust?
+            A systems programming language.
+        "};
+        let (rest, doc) = parse_document(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(doc.blocks.len(), 2);
+        assert!(matches!(&doc.blocks[0], Block::Uninterested(_)));
+        assert!(matches!(&doc.blocks[1], Block::FlashCardWithMeta { .. }));
+
+        let mut reconstructed = String::new();
+        if let Some(ref fm) = doc.front_matter {
+            match fm {
+                FrontMatter::Raw { raw } | FrontMatter::AnkiSync { raw, .. } => {
+                    reconstructed.push_str(raw);
+                }
+            }
+        }
+        for block in &doc.blocks {
+            match block {
+                Block::FlashCard(card) => {
+                    reconstructed.push_str(&card.raw);
+                }
+                Block::FlashCardWithMeta {
+                    metadata,
+                    blank_line,
+                    flashcard,
+                } => {
+                    reconstructed.push_str(&metadata.raw);
+                    if let Some(bl) = blank_line {
+                        reconstructed.push_str(&bl.raw);
+                    }
+                    reconstructed.push_str(&flashcard.raw);
+                }
+                Block::Uninterested(block) => {
+                    reconstructed.push_str(&block.raw);
+                }
+            }
+        }
+
+        assert_eq!(reconstructed, input);
+    }
 }
