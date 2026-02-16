@@ -2,6 +2,7 @@
 
 ## Rust Best Practices
 
+- Run `cargo clippy` and fix warnings before committing
 - Use `cargo fmt` before committing
 - Prefer returning `Result` or `Option` over panicking
 - Use `#[cfg(test)] mod tests` inline for unit tests
