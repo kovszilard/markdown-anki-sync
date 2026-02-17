@@ -7,6 +7,7 @@ use nom::{
     multi::many1,
 };
 
+#[derive(Clone)]
 pub struct FlashCard {
     pub raw: String,
     pub front: String,

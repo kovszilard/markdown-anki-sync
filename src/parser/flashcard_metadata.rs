@@ -9,24 +9,25 @@ use nom::{
     sequence::{delimited, preceded},
 };
 
+#[derive(Clone)]
 pub struct FlashCardMetaData {
     pub raw: String,
-    pub id: Option<u32>,
+    pub id: Option<u64>,
     pub sync: Option<bool>,
     pub deck: Option<String>,
     pub tags: Option<Vec<String>>,
 }
 
 enum Field<'a> {
-    Id(u32),
+    Id(u64),
     Sync(bool),
     Deck(&'a str),
     Tags(Vec<&'a str>),
 }
 
 // value parsers
-fn parse_u32_digits(input: &str) -> IResult<&str, u32> {
-    map_res(digit1, |s: &str| s.parse::<u32>()).parse(input)
+fn parse_u64_digits(input: &str) -> IResult<&str, u64> {
+    map_res(digit1, |s: &str| s.parse::<u64>()).parse(input)
 }
 
 fn parse_word_or_quoted_string(input: &str) -> IResult<&str, &str> {
@@ -50,8 +51,8 @@ fn parse_key_value<'a, O>(
 }
 
 // parsers for specific keys
-fn parse_anki_id(input: &str) -> IResult<&str, u32> {
-    parse_key_value("anki_id", parse_u32_digits).parse(input)
+fn parse_anki_id(input: &str) -> IResult<&str, u64> {
+    parse_key_value("anki_id", parse_u64_digits).parse(input)
 }
 
 fn parse_anki_deck(input: &str) -> IResult<&str, &str> {
@@ -127,10 +128,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_u32_digits() {
-        let cases = [("1234", 1234u32), ("0", 0u32), ("987654321", 987654321u32)];
+    fn test_parse_u64_digits() {
+        let cases = [("1234", 1234u64), ("0", 0u64), ("987654321", 987654321u64)];
         for (input, expected) in cases.iter() {
-            let (_, value) = parse_u32_digits(input).expect("Should parse u32");
+            let (_, value) = parse_u64_digits(input).expect("Should parse u64");
             assert_eq!(value, *expected);
         }
     }

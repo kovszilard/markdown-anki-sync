@@ -1,0 +1,102 @@
+### addNote
+
+POST localhost:8765 HTTP/1.1
+Content-Type: application/json
+
+{
+  "action": "addNote",
+  "params": {
+    "note": {
+      "deckName": "Default",
+      "fields": {
+        "Back": "back content",
+        "Front": "front content"
+      },
+      "modelName": "Basic",
+      "tags": [
+        "tag1",
+        "tag2"
+      ]
+    }
+  },
+  "version": 6
+}
+
+
+### canAddNotes
+
+POST localhost:8765 HTTP/1.1
+Content-Type: application/json
+
+{
+  "action": "canAddNotes",
+  "params": {
+    "notes": [
+      {
+        "deckName": "Default",
+        "fields": {
+          "Back": "back content",
+          "Front": "front content"
+        },
+        "modelName": "Basic",
+        "tags": [
+          "tag1",
+          "tag2"
+        ]
+      }
+    ]
+  },
+  "version": 6
+}
+
+
+### canAddNotesWithErrorDetail
+
+POST localhost:8765 HTTP/1.1
+Content-Type: application/json
+
+{
+  "action": "canAddNotesWithErrorDetail",
+  "params": {
+    "notes": [
+      {
+        "deckName": "Default",
+        "fields": {
+          "Back": "back content",
+          "Front": "front content"
+        },
+        "modelName": "Basic",
+        "tags": [
+          "tag1",
+          "tag2"
+        ]
+      }
+    ]
+  },
+  "version": 6
+}
+
+
+### updateNote
+
+POST localhost:8765 HTTP/1.1
+Content-Type: application/json
+
+{
+  "action": "updateNote",
+  "params": {
+    "note": {
+      "fields": {
+        "Back": "updated back content",
+        "Front": "updated front content"
+      },
+      "id": 1771421633196,
+      "modelName": "Basic",
+      "tags": [
+        "updatedTag1",
+        "tag2"
+      ]
+    }
+  },
+  "version": 6
+}

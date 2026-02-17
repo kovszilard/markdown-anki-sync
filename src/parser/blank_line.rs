@@ -5,6 +5,7 @@ use nom::{
     multi::many1,
 };
 
+#[derive(Clone)]
 pub struct BlankLine {
     pub raw: String,
 }
