@@ -7,9 +7,17 @@ Write your flashcards in Markdown, run the tool, and they appear in Anki. The to
 ## Prerequisites
 
 - [Anki](https://apps.ankiweb.net/) running with the [AnkiConnect](https://foosoft.net/projects/anki-connect/) add-on installed (listens on `localhost:8765`)
-- [Rust toolchain](https://rustup.rs/) for building from source
+- [Rust toolchain](https://rustup.rs/) or [Nix](https://nixos.org/) for building from source
 
 ## Installation
+
+### With Nix
+
+```sh
+nix profile install github:kovszilard/markdown-anki-sync
+```
+
+### With Cargo
 
 ```sh
 cargo install --path .
@@ -19,6 +27,12 @@ cargo install --path .
 
 ```sh
 markdown-anki-sync <markdown-file>
+```
+
+Or run directly without installing:
+
+```sh
+nix run github:kovszilard/markdown-anki-sync -- <markdown-file>
 ```
 
 ## Markdown Format
