@@ -4,11 +4,11 @@ use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter, 
 #[derive(Debug)]
 pub struct BlockSyncPlan {
     pub block: Block,
-    pub anki_action: AnkiAction,
+    pub action: Action,
 }
 
 #[derive(Debug)]
-pub enum AnkiAction {
+pub enum Action {
     CreateNote(Note),
     UpdateNote(Note),
     DoNothing,
@@ -47,10 +47,10 @@ impl DocumentSyncPlan {
                 let response = request.as_ref().and_then(&send_request);
                 match block_plan.block_from_response(&response) {
                     Ok(block) => {
-                        match &block_plan.anki_action {
-                            AnkiAction::CreateNote(_) => created += 1,
-                            AnkiAction::UpdateNote(_) => updated += 1,
-                            AnkiAction::DoNothing => {}
+                        match &block_plan.action {
+                            Action::CreateNote(_) => created += 1,
+                            Action::UpdateNote(_) => updated += 1,
+                            Action::DoNothing => {}
                         }
                         blocks.push(block);
                     }
@@ -106,7 +106,7 @@ impl BlockSyncPlan {
 
                 Self {
                     block: block.clone(),
-                    anki_action: AnkiAction::CreateNote(note),
+                    action: Action::CreateNote(note),
                 }
             }
 
@@ -147,13 +147,13 @@ impl BlockSyncPlan {
                 Self {
                     block: block.clone(),
 
-                    anki_action: AnkiAction::UpdateNote(note),
+                    action: Action::UpdateNote(note),
                 }
             }
 
             other => Self {
                 block: other,
-                anki_action: AnkiAction::DoNothing,
+                action: Action::DoNothing,
             },
         }
     }
@@ -164,7 +164,7 @@ impl BlockSyncPlan {
                 // Create a note from flashcard
                 BlockSyncPlan {
                     block: Block::FlashCard(FlashCard { raw, front, back }),
-                    anki_action: AnkiAction::CreateNote(_),
+                    action: Action::CreateNote(_),
                 } if response.result.is_some() && response.error.is_none() => {
                     let id = response.result.unwrap();
                     Ok(Block::FlashCardWithMeta {
@@ -185,7 +185,7 @@ impl BlockSyncPlan {
                             blank_line,
                             flashcard,
                         },
-                    anki_action: AnkiAction::CreateNote(_),
+                    action: Action::CreateNote(_),
                 } if response.result.is_some() && response.error.is_none() => {
                     let id = response.result.unwrap();
                     Ok(Block::FlashCardWithMeta {
@@ -211,7 +211,7 @@ impl BlockSyncPlan {
                             blank_line,
                             flashcard,
                         },
-                    anki_action: AnkiAction::UpdateNote(_),
+                    action: Action::UpdateNote(_),
                 } if response.result.is_none() && response.error.is_none() => {
                     Ok(Block::FlashCardWithMeta {
                         metadata: FlashCardMetaData::from_fields(
@@ -238,18 +238,18 @@ impl BlockSyncPlan {
     }
 
     pub fn to_request_payload(&self) -> Option<Request> {
-        match &self.anki_action {
-            AnkiAction::CreateNote(note) => Some(Request {
+        match &self.action {
+            Action::CreateNote(note) => Some(Request {
                 action: "addNote".to_string(),
                 version: 6,
                 params: Params { note: note.clone() },
             }),
-            AnkiAction::UpdateNote(note) => Some(Request {
+            Action::UpdateNote(note) => Some(Request {
                 action: "updateNote".to_string(),
                 version: 6,
                 params: Params { note: note.clone() },
             }),
-            AnkiAction::DoNothing => None,
+            Action::DoNothing => None,
         }
     }
 }
