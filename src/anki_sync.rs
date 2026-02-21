@@ -2,7 +2,7 @@ use crate::anki::{BasicModelFields, Note, Params, Request, Response};
 use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter, MarkdownDocument};
 
 #[derive(Debug)]
-pub struct BlockWithAnkiAction {
+pub struct BlockSyncPlan {
     pub block: Block,
     pub anki_action: AnkiAction,
 }
@@ -15,22 +15,22 @@ pub enum AnkiAction {
 }
 
 #[derive(Debug)]
-pub struct MarkdownDocumentWithAnkiActions {
+pub struct DocumentSyncPlan {
     pub front_matter: Option<FrontMatter>,
-    pub blocks_with_anki_action: Vec<BlockWithAnkiAction>,
+    pub block_plans: Vec<BlockSyncPlan>,
 }
 
-impl MarkdownDocumentWithAnkiActions {
+impl DocumentSyncPlan {
     pub fn from_document(doc: MarkdownDocument) -> Self {
-        let blocks_with_anki_action = doc
+        let block_plans = doc
             .blocks
             .iter()
-            .map(|block| BlockWithAnkiAction::from_block(block.clone(), &doc.front_matter))
+            .map(|block| BlockSyncPlan::from_block(block.clone(), &doc.front_matter))
             .collect();
 
         Self {
             front_matter: doc.front_matter.clone(),
-            blocks_with_anki_action,
+            block_plans,
         }
     }
 
@@ -38,16 +38,16 @@ impl MarkdownDocumentWithAnkiActions {
         self,
         send_request: impl Fn(&Request) -> Option<Response>,
     ) -> Result<(MarkdownDocument, u32, u32), String> {
-        let block_count = self.blocks_with_anki_action.len();
+        let block_count = self.block_plans.len();
 
-        let (blocks, created, updated) = self.blocks_with_anki_action.iter().fold(
+        let (blocks, created, updated) = self.block_plans.iter().fold(
             (Vec::new(), 0u32, 0u32),
-            |(mut blocks, mut created, mut updated), block_with_action| {
-                let request = block_with_action.to_request_payload();
+            |(mut blocks, mut created, mut updated), block_plan| {
+                let request = block_plan.to_request_payload();
                 let response = request.as_ref().and_then(&send_request);
-                match block_with_action.block_from_response(&response) {
+                match block_plan.block_from_response(&response) {
                     Ok(block) => {
-                        match &block_with_action.anki_action {
+                        match &block_plan.anki_action {
                             AnkiAction::CreateNote(_) => created += 1,
                             AnkiAction::UpdateNote(_) => updated += 1,
                             AnkiAction::DoNothing => {}
@@ -77,7 +77,7 @@ impl MarkdownDocumentWithAnkiActions {
     }
 }
 
-impl BlockWithAnkiAction {
+impl BlockSyncPlan {
     pub fn from_block(block: Block, front_matter: &Option<FrontMatter>) -> Self {
         let mut default_deck: Option<String> = None;
         let mut default_tags: Vec<String> = Vec::new();
@@ -162,7 +162,7 @@ impl BlockWithAnkiAction {
         match response {
             Some(response) => match self {
                 // Create a note from flashcard
-                BlockWithAnkiAction {
+                BlockSyncPlan {
                     block: Block::FlashCard(FlashCard { raw, front, back }),
                     anki_action: AnkiAction::CreateNote(_),
                 } if response.result.is_some() && response.error.is_none() => {
@@ -178,7 +178,7 @@ impl BlockWithAnkiAction {
                     })
                 }
                 // Create a note from flashcard with metadata
-                BlockWithAnkiAction {
+                BlockSyncPlan {
                     block:
                         Block::FlashCardWithMeta {
                             metadata,
@@ -204,7 +204,7 @@ impl BlockWithAnkiAction {
                     })
                 }
                 // Update note from flashcard with metadata
-                BlockWithAnkiAction {
+                BlockSyncPlan {
                     block:
                         Block::FlashCardWithMeta {
                             metadata,

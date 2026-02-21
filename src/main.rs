@@ -1,5 +1,5 @@
 use notes_to_anki::anki::Response;
-use notes_to_anki::anki_sync::MarkdownDocumentWithAnkiActions;
+use notes_to_anki::anki_sync::DocumentSyncPlan;
 use notes_to_anki::parser::document::parse_document;
 use std::env;
 use std::process;
@@ -32,10 +32,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Warning: unparsed remaining input ({} bytes)", rest.len());
     }
 
-    let document_with_anki_actions = MarkdownDocumentWithAnkiActions::from_document(doc);
+    let sync_plan = DocumentSyncPlan::from_document(doc);
 
     let (synced_document, created_count, updated_count) =
-        document_with_anki_actions.sync(|request| {
+        sync_plan.sync(|request| {
             ureq::post("http://localhost:8765")
                 .send_json(request)
                 .and_then(|mut body| body.body_mut().read_json::<Response>())
