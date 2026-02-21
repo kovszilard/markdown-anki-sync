@@ -1,4 +1,4 @@
-use crate::anki::{anki_action_to_request_payload, BasicModelFields, Note, Request, Response};
+use crate::anki::{BasicModelFields, Note, Params, Request, Response};
 use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter, MarkdownDocument};
 
 #[derive(Debug)]
@@ -40,30 +40,27 @@ impl MarkdownDocumentWithAnkiActions {
     ) -> Result<(MarkdownDocument, u32, u32), String> {
         let block_count = self.blocks_with_anki_action.len();
 
-        let (blocks, created, updated) =
-            self.blocks_with_anki_action
-                .iter()
-                .fold(
-                    (Vec::new(), 0u32, 0u32),
-                    |(mut blocks, mut created, mut updated), block_with_action| {
-                        let request = anki_action_to_request_payload(block_with_action);
-                        let response = request.as_ref().and_then(&send_request);
-                        match block_with_action.sync_with_anki_response(&response) {
-                            Ok(block) => {
-                                match &block_with_action.anki_action {
-                                    AnkiAction::CreateNote(_) => created += 1,
-                                    AnkiAction::UpdateNote(_) => updated += 1,
-                                    AnkiAction::DoNothing => {}
-                                }
-                                blocks.push(block);
-                            }
-                            Err(err) => {
-                                eprintln!("Error syncing block: {}", err);
-                            }
+        let (blocks, created, updated) = self.blocks_with_anki_action.iter().fold(
+            (Vec::new(), 0u32, 0u32),
+            |(mut blocks, mut created, mut updated), block_with_action| {
+                let request = block_with_action.to_request_payload();
+                let response = request.as_ref().and_then(&send_request);
+                match block_with_action.sync_with_anki_response(&response) {
+                    Ok(block) => {
+                        match &block_with_action.anki_action {
+                            AnkiAction::CreateNote(_) => created += 1,
+                            AnkiAction::UpdateNote(_) => updated += 1,
+                            AnkiAction::DoNothing => {}
                         }
-                        (blocks, created, updated)
-                    },
-                );
+                        blocks.push(block);
+                    }
+                    Err(err) => {
+                        eprintln!("Error syncing block: {}", err);
+                    }
+                }
+                (blocks, created, updated)
+            },
+        );
 
         if blocks.len() == block_count {
             Ok((
@@ -237,6 +234,32 @@ impl BlockWithAnkiAction {
                 )),
             },
             _ => Ok(self.block.clone()),
+        }
+    }
+}
+impl BlockWithAnkiAction {
+    pub fn to_request_payload(&self) -> Option<Request> {
+        match self {
+            BlockWithAnkiAction {
+                block: _,
+                anki_action: AnkiAction::CreateNote(note),
+            } => Some(Request {
+                action: "addNote".to_string(),
+                version: 6,
+                params: Params { note: note.clone() },
+            }),
+            BlockWithAnkiAction {
+                block: _,
+                anki_action: AnkiAction::UpdateNote(note),
+            } => Some(Request {
+                action: "updateNote".to_string(),
+                version: 6,
+                params: Params { note: note.clone() },
+            }),
+            BlockWithAnkiAction {
+                block: _,
+                anki_action: AnkiAction::DoNothing,
+            } => None,
         }
     }
 }
