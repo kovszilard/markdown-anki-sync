@@ -1,4 +1,4 @@
-use crate::document_with_anki_actions::{AnkiAction, BlockWithAnkiAction};
+use crate::anki_sync::{AnkiAction, BlockWithAnkiAction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]

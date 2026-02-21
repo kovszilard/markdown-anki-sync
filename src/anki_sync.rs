@@ -69,7 +69,7 @@ impl BlockWithAnkiAction {
                         ref front,
                         ref back,
                     },
-            } if sync.is_none_or(|x| x == true) => {
+            } if sync.is_none_or(|x| x) => {
                 let deck_name = deck
                     .clone()
                     .or(default_deck)

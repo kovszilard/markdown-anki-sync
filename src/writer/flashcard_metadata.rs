@@ -38,7 +38,7 @@ impl FlashCardMetaData {
 
         let formatted_fields = vec![anki_id, anki_deck, anki_sync, anki_tags]
             .into_iter()
-            .filter(|field| field != "")
+            .filter(|field| !field.is_empty())
             .collect::<Vec<String>>()
             .join(", ");
 

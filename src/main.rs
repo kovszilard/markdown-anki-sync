@@ -1,7 +1,7 @@
 use notes_to_anki::anki::*;
-use notes_to_anki::document_with_anki_actions::AnkiAction;
-use notes_to_anki::document_with_anki_actions::BlockWithAnkiAction;
-use notes_to_anki::document_with_anki_actions::MarkdownDocumentWithAnkiActions;
+use notes_to_anki::anki_sync::AnkiAction;
+use notes_to_anki::anki_sync::BlockWithAnkiAction;
+use notes_to_anki::anki_sync::MarkdownDocumentWithAnkiActions;
 use notes_to_anki::parser::document::parse_document;
 use notes_to_anki::types::MarkdownDocument;
 use std::env;
@@ -76,9 +76,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Some(request) => {
                         let result = ureq::post("http://localhost:8765")
                             .send_json(&request)
-                            .map(|mut body| body.body_mut().read_json::<Response>())
-                            .flatten();
-                        result.map_or_else(|_| None, Some)
+                            .and_then(|mut body| body.body_mut().read_json::<Response>());
+                        result.ok()
                     }
                     None => None,
                 };
