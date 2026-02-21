@@ -4,17 +4,20 @@ use crate::parser::flashcard::FlashCard;
 use crate::parser::flashcard_metadata::FlashCardMetaData;
 use crate::parser::front_matter::FrontMatter;
 
+#[derive(Debug)]
 pub struct BlockWithAnkiAction {
     pub block: Block,
     pub anki_action: AnkiAction,
 }
 
+#[derive(Debug)]
 pub enum AnkiAction {
     CreateNote(Note),
     UpdateNote(Note),
     DoNothing,
 }
 
+#[derive(Debug)]
 pub struct MarkdownDocumentWithAnkiActions {
     pub front_matter: Option<FrontMatter>,
     pub blocks_with_anki_action: Vec<BlockWithAnkiAction>,

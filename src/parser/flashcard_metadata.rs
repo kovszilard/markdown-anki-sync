@@ -9,7 +9,7 @@ use nom::{
     sequence::{delimited, preceded},
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FlashCardMetaData {
     pub raw: String,
     pub id: Option<u64>,

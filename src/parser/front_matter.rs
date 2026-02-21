@@ -8,7 +8,7 @@ use nom::{
     sequence::delimited,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FrontMatter {
     Raw {
         raw: String,

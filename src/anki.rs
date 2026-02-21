@@ -33,6 +33,6 @@ pub struct BasicModelFields {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Response {
-    result: Option<u64>,
-    error: Option<String>,
+    pub result: Option<u64>,
+    pub error: Option<String>,
 }

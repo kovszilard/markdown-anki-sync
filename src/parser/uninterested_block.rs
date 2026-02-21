@@ -9,7 +9,7 @@ use nom::{
 use super::flashcard::parse_flashcard;
 use super::flashcard_metadata::parse_flashcard_metadata;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct UninterestedBlock {
     pub raw: String,
 }

@@ -6,7 +6,7 @@ use super::flashcard_metadata::FlashCardMetaData;
 use super::front_matter::FrontMatter;
 use super::uninterested_block::UninterestedBlock;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Block {
     FlashCard(FlashCard),
     FlashCardWithMeta {
