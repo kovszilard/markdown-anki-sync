@@ -236,30 +236,20 @@ impl BlockWithAnkiAction {
             _ => Ok(self.block.clone()),
         }
     }
-}
-impl BlockWithAnkiAction {
+
     pub fn to_request_payload(&self) -> Option<Request> {
-        match self {
-            BlockWithAnkiAction {
-                block: _,
-                anki_action: AnkiAction::CreateNote(note),
-            } => Some(Request {
+        match &self.anki_action {
+            AnkiAction::CreateNote(note) => Some(Request {
                 action: "addNote".to_string(),
                 version: 6,
                 params: Params { note: note.clone() },
             }),
-            BlockWithAnkiAction {
-                block: _,
-                anki_action: AnkiAction::UpdateNote(note),
-            } => Some(Request {
+            AnkiAction::UpdateNote(note) => Some(Request {
                 action: "updateNote".to_string(),
                 version: 6,
                 params: Params { note: note.clone() },
             }),
-            BlockWithAnkiAction {
-                block: _,
-                anki_action: AnkiAction::DoNothing,
-            } => None,
+            AnkiAction::DoNothing => None,
         }
     }
 }
