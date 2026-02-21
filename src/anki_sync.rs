@@ -45,7 +45,7 @@ impl MarkdownDocumentWithAnkiActions {
             |(mut blocks, mut created, mut updated), block_with_action| {
                 let request = block_with_action.to_request_payload();
                 let response = request.as_ref().and_then(&send_request);
-                match block_with_action.sync_with_anki_response(&response) {
+                match block_with_action.block_from_response(&response) {
                     Ok(block) => {
                         match &block_with_action.anki_action {
                             AnkiAction::CreateNote(_) => created += 1,
@@ -158,7 +158,7 @@ impl BlockWithAnkiAction {
         }
     }
 
-    pub fn sync_with_anki_response(&self, response: &Option<Response>) -> Result<Block, String> {
+    pub fn block_from_response(&self, response: &Option<Response>) -> Result<Block, String> {
         match response {
             Some(response) => match self {
                 // Create a note from flashcard
@@ -169,7 +169,7 @@ impl BlockWithAnkiAction {
                     let id = response.result.unwrap();
                     Ok(Block::FlashCardWithMeta {
                         metadata: FlashCardMetaData::from_fields(Some(id), None, None, None),
-                        blank_line: Some(BlankLine::empty()),
+                        blank_line: Some(BlankLine::single()),
                         flashcard: FlashCard {
                             raw: raw.clone(),
                             front: front.clone(),

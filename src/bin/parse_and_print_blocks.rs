@@ -52,8 +52,8 @@ fn main() {
                     metadata.id, metadata.sync, metadata.deck, metadata.tags, flashcard.front
                 );
             }
-            Block::Uninterested(_) => {
-                println!("Uninterested");
+            Block::Passthrough(_) => {
+                println!("Passthrough");
             }
         }
     }

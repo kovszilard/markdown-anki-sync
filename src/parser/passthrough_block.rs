@@ -1,6 +1,6 @@
 use super::flashcard::parse_flashcard;
 use super::flashcard_metadata::parse_flashcard_metadata;
-use crate::types::UninterestedBlock;
+use crate::types::PassthroughBlock;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -16,11 +16,11 @@ fn non_special_line(input: &str) -> IResult<&str, &str> {
     alt((recognize((not_line_ending, line_ending)), rest)).parse(input)
 }
 
-pub fn parse_uninterested_block(input: &str) -> IResult<&str, UninterestedBlock> {
+pub fn parse_passthrough_block(input: &str) -> IResult<&str, PassthroughBlock> {
     let (input, raw) = recognize(many1(non_special_line)).parse(input)?;
     Ok((
         input,
-        UninterestedBlock {
+        PassthroughBlock {
             raw: raw.to_string(),
         },
     ))
@@ -34,7 +34,7 @@ mod tests {
     #[test]
     fn test_single_line() {
         let input = "Hello world\n";
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, "Hello world\n");
     }
@@ -47,7 +47,7 @@ mod tests {
             More text after a blank line.
             And another line.
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, input);
     }
@@ -59,7 +59,7 @@ mod tests {
             ## Q: What is Rust?
             Answer here.
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(block.raw, "Regular content.\n");
         assert_eq!(rest, "## Q: What is Rust?\nAnswer here.\n");
     }
@@ -70,7 +70,7 @@ mod tests {
             Regular content.
             <!-- anki_id: 123 -->
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(block.raw, "Regular content.\n");
         assert_eq!(rest, "<!-- anki_id: 123 -->\n");
     }
@@ -81,7 +81,7 @@ mod tests {
             ## Not Q: just a header
             Some body text.
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, input);
     }
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_eof_without_trailing_newline() {
         let input = "Just some text";
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, "Just some text");
     }
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn test_blank_lines_preserved() {
         let input = "\n\n\n";
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, "\n\n\n");
     }
@@ -109,7 +109,7 @@ mod tests {
             # Q: Top level question
             Answer.
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(block.raw, "Intro text.\n");
         assert_eq!(rest, "# Q: Top level question\nAnswer.\n");
     }
@@ -117,13 +117,13 @@ mod tests {
     #[test]
     fn test_rejects_flashcard_at_start() {
         let input = "## Q: Question\nAnswer\n";
-        assert!(parse_uninterested_block(input).is_err());
+        assert!(parse_passthrough_block(input).is_err());
     }
 
     #[test]
     fn test_rejects_metadata_at_start() {
         let input = "<!-- anki_id: 1 -->";
-        assert!(parse_uninterested_block(input).is_err());
+        assert!(parse_passthrough_block(input).is_err());
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
             <!-- this is a regular comment -->
             More text.
         "};
-        let (rest, block) = parse_uninterested_block(input).unwrap();
+        let (rest, block) = parse_passthrough_block(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(block.raw, input);
     }

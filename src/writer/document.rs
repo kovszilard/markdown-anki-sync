@@ -26,7 +26,7 @@ impl MarkdownDocument {
                     }
                     final_raw.push_str(&flashcard.raw);
                 }
-                Block::Uninterested(block) => {
+                Block::Passthrough(block) => {
                     final_raw.push_str(&block.raw);
                 }
             }

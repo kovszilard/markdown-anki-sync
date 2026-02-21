@@ -23,8 +23,8 @@ pub fn parse_document(input: &str) -> IResult<&str, MarkdownDocument> {
             Ok((i, Block::FlashCard(card)))
         },
         |i| {
-            let (i, block) = super::uninterested_block::parse_uninterested_block(i)?;
-            Ok((i, Block::Uninterested(block)))
+            let (i, block) = super::passthrough_block::parse_passthrough_block(i)?;
+            Ok((i, Block::Passthrough(block)))
         },
     )))
     .parse(input)?;
@@ -159,8 +159,8 @@ mod tests {
         assert!(doc.front_matter.is_some());
         assert_eq!(doc.blocks.len(), 3);
 
-        // Block 0: uninterested (intro text)
-        assert!(matches!(&doc.blocks[0], Block::Uninterested(_)));
+        // Block 0: passthrough (intro text)
+        assert!(matches!(&doc.blocks[0], Block::Passthrough(_)));
 
         // Block 1: metadata + flashcard
         match &doc.blocks[1] {
@@ -311,7 +311,7 @@ mod tests {
                     }
                     reconstructed.push_str(&flashcard.raw);
                 }
-                Block::Uninterested(block) => {
+                Block::Passthrough(block) => {
                     reconstructed.push_str(&block.raw);
                 }
             }
@@ -336,7 +336,7 @@ mod tests {
         let (rest, doc) = parse_document(input).unwrap();
         assert_eq!(rest, "");
         assert_eq!(doc.blocks.len(), 2);
-        assert!(matches!(&doc.blocks[0], Block::Uninterested(_)));
+        assert!(matches!(&doc.blocks[0], Block::Passthrough(_)));
         assert!(matches!(&doc.blocks[1], Block::FlashCardWithMeta { .. }));
 
         let mut reconstructed = String::new();
@@ -363,7 +363,7 @@ mod tests {
                     }
                     reconstructed.push_str(&flashcard.raw);
                 }
-                Block::Uninterested(block) => {
+                Block::Passthrough(block) => {
                     reconstructed.push_str(&block.raw);
                 }
             }

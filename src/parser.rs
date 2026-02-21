@@ -3,4 +3,4 @@ pub mod document;
 pub mod flashcard;
 pub mod flashcard_metadata;
 pub mod front_matter;
-pub mod uninterested_block;
+pub mod passthrough_block;

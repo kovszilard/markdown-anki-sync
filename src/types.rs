@@ -23,7 +23,7 @@ pub enum Block {
         blank_line: Option<BlankLine>,
         flashcard: FlashCard,
     },
-    Uninterested(UninterestedBlock),
+    Passthrough(PassthroughBlock),
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +48,6 @@ pub struct BlankLine {
 }
 
 #[derive(Debug, Clone)]
-pub struct UninterestedBlock {
+pub struct PassthroughBlock {
     pub raw: String,
 }
