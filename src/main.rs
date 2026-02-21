@@ -1,6 +1,5 @@
 use notes_to_anki::anki::*;
 use notes_to_anki::anki_sync::AnkiAction;
-use notes_to_anki::anki_sync::BlockWithAnkiAction;
 use notes_to_anki::anki_sync::MarkdownDocumentWithAnkiActions;
 use notes_to_anki::parser::document::parse_document;
 use notes_to_anki::types::MarkdownDocument;
@@ -35,18 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Warning: unparsed remaining input ({} bytes)", rest.len());
     }
 
-    let document_with_anki_actions: MarkdownDocumentWithAnkiActions = {
-        let new_blocks: Vec<BlockWithAnkiAction> = doc
-            .blocks
-            .iter()
-            .map(|block| BlockWithAnkiAction::from_block(block.clone(), &doc.front_matter))
-            .collect();
-
-        MarkdownDocumentWithAnkiActions {
-            front_matter: doc.front_matter.clone(),
-            blocks_with_anki_action: new_blocks,
-        }
-    };
+    let document_with_anki_actions = MarkdownDocumentWithAnkiActions::from_document(doc);
 
     let (new_result_blocks, created_count, updated_count) = document_with_anki_actions
         .blocks_with_anki_action
@@ -83,10 +71,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Created: {}, Updated: {}", created_count, updated_count);
 
-    let is_all_ok = new_result_blocks.len() == doc.blocks.len();
+    let is_all_ok =
+        new_result_blocks.len() == document_with_anki_actions.blocks_with_anki_action.len();
     let synced_document: Option<MarkdownDocument> = if is_all_ok {
         Some(MarkdownDocument {
-            front_matter: doc.front_matter,
+            front_matter: document_with_anki_actions.front_matter,
             blocks: new_result_blocks,
         })
     } else {

@@ -1,5 +1,5 @@
 use crate::anki::{BasicModelFields, Note, Response};
-use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter};
+use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter, MarkdownDocument};
 
 #[derive(Debug)]
 pub struct BlockWithAnkiAction {
@@ -18,6 +18,21 @@ pub enum AnkiAction {
 pub struct MarkdownDocumentWithAnkiActions {
     pub front_matter: Option<FrontMatter>,
     pub blocks_with_anki_action: Vec<BlockWithAnkiAction>,
+}
+
+impl MarkdownDocumentWithAnkiActions {
+    pub fn from_document(doc: MarkdownDocument) -> Self {
+        let blocks_with_anki_action = doc
+            .blocks
+            .iter()
+            .map(|block| BlockWithAnkiAction::from_block(block.clone(), &doc.front_matter))
+            .collect();
+
+        Self {
+            front_matter: doc.front_matter.clone(),
+            blocks_with_anki_action,
+        }
+    }
 }
 
 impl BlockWithAnkiAction {
