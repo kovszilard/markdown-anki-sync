@@ -1,6 +1,4 @@
-use notes_to_anki::anki::Params;
-use notes_to_anki::anki::Request;
-use notes_to_anki::anki::Response;
+use notes_to_anki::anki::*;
 use notes_to_anki::document_with_anki_actions::AnkiAction;
 use notes_to_anki::document_with_anki_actions::BlockWithAnkiAction;
 use notes_to_anki::document_with_anki_actions::MarkdownDocumentWithAnkiActions;
@@ -88,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     None => None,
                 };
-                match sync_block_with_anki_response(block_with_action, &response) {
+                match block_with_action.sync_with_anki_response(&response) {
                     Ok(block) => {
                         match &block_with_action.anki_action {
                             AnkiAction::CreateNote(_) => created += 1,
@@ -122,111 +120,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     std::fs::write(filename, synced_document.raw())?;
     Ok(())
-}
-
-fn anki_action_to_request_payload(action: &BlockWithAnkiAction) -> Option<Request> {
-    match action {
-        BlockWithAnkiAction {
-            block: _,
-            anki_action: AnkiAction::CreateNote(note),
-        } => Some(Request {
-            action: "addNote".to_string(),
-            version: 6,
-            params: Params { note: note.clone() },
-        }),
-        BlockWithAnkiAction {
-            block: _,
-            anki_action: AnkiAction::UpdateNote(note),
-        } => Some(Request {
-            action: "updateNote".to_string(),
-            version: 6,
-            params: Params { note: note.clone() },
-        }),
-        BlockWithAnkiAction {
-            block: _,
-            anki_action: AnkiAction::DoNothing,
-        } => None,
-    }
-}
-
-fn sync_block_with_anki_response(
-    block_with_anki_action: &BlockWithAnkiAction,
-    response: &Option<Response>,
-) -> Result<Block, AppError> {
-    match response {
-        Some(response) => match block_with_anki_action {
-            // create note from flashcard
-            BlockWithAnkiAction {
-                block: Block::FlashCard(FlashCard { raw, front, back }),
-                anki_action: AnkiAction::CreateNote(_),
-            } if response.result.is_some() && response.error.is_none() => {
-                let id = response.result.unwrap();
-                Ok(Block::FlashCardWithMeta {
-                    metadata: FlashCardMetaData::from_fields(Some(id), None, None, None),
-                    blank_line: Some(BlankLine::empty()),
-                    flashcard: FlashCard {
-                        raw: raw.clone(),
-                        front: front.clone(),
-                        back: back.clone(),
-                    },
-                })
-            }
-            // create note from flashcard with metadata
-            BlockWithAnkiAction {
-                block:
-                    Block::FlashCardWithMeta {
-                        metadata,
-                        blank_line,
-                        flashcard,
-                    },
-                anki_action: AnkiAction::CreateNote(_),
-            } if response.result.is_some() && response.error.is_none() => {
-                let id = response.result.unwrap();
-                Ok(Block::FlashCardWithMeta {
-                    metadata: FlashCardMetaData::from_fields(
-                        Some(id),
-                        metadata.deck.clone(),
-                        metadata.sync,
-                        metadata.tags.clone(),
-                    ),
-                    blank_line: blank_line.clone(),
-                    flashcard: FlashCard {
-                        raw: flashcard.raw.clone(),
-                        front: flashcard.front.clone(),
-                        back: flashcard.back.clone(),
-                    },
-                })
-            }
-            // update note from flashcard with metadata
-            BlockWithAnkiAction {
-                block:
-                    Block::FlashCardWithMeta {
-                        metadata,
-                        blank_line,
-                        flashcard,
-                    },
-                anki_action: AnkiAction::UpdateNote(_),
-            } if response.result.is_none() && response.error.is_none() => {
-                Ok(Block::FlashCardWithMeta {
-                    metadata: FlashCardMetaData::from_fields(
-                        metadata.id,
-                        metadata.deck.clone(),
-                        metadata.sync,
-                        metadata.tags.clone(),
-                    ),
-                    blank_line: blank_line.clone(),
-                    flashcard: FlashCard {
-                        raw: flashcard.raw.clone(),
-                        front: flashcard.front.clone(),
-                        back: flashcard.back.clone(),
-                    },
-                })
-            }
-            _ => Err(AppError(format!(
-                "Unexpected block or Anki response. Block: {:#?}, Response: {:#?}",
-                block_with_anki_action.block, response
-            ))),
-        },
-        _ => Ok(block_with_anki_action.block.clone()),
-    }
 }

@@ -1,4 +1,5 @@
-use crate::anki::{BasicModelFields, Note};
+use crate::anki::{BasicModelFields, Note, Response};
+use crate::parser::blank_line::BlankLine;
 use crate::parser::document::Block;
 use crate::parser::flashcard::FlashCard;
 use crate::parser::flashcard_metadata::FlashCardMetaData;
@@ -101,6 +102,85 @@ impl BlockWithAnkiAction {
                 block: other,
                 anki_action: AnkiAction::DoNothing,
             },
+        }
+    }
+
+    pub fn sync_with_anki_response(&self, response: &Option<Response>) -> Result<Block, String> {
+        match response {
+            Some(response) => match self {
+                // create note from flashcard
+                BlockWithAnkiAction {
+                    block: Block::FlashCard(FlashCard { raw, front, back }),
+                    anki_action: AnkiAction::CreateNote(_),
+                } if response.result.is_some() && response.error.is_none() => {
+                    let id = response.result.unwrap();
+                    Ok(Block::FlashCardWithMeta {
+                        metadata: FlashCardMetaData::from_fields(Some(id), None, None, None),
+                        blank_line: Some(BlankLine::empty()),
+                        flashcard: FlashCard {
+                            raw: raw.clone(),
+                            front: front.clone(),
+                            back: back.clone(),
+                        },
+                    })
+                }
+                // create note from flashcard with metadata
+                BlockWithAnkiAction {
+                    block:
+                        Block::FlashCardWithMeta {
+                            metadata,
+                            blank_line,
+                            flashcard,
+                        },
+                    anki_action: AnkiAction::CreateNote(_),
+                } if response.result.is_some() && response.error.is_none() => {
+                    let id = response.result.unwrap();
+                    Ok(Block::FlashCardWithMeta {
+                        metadata: FlashCardMetaData::from_fields(
+                            Some(id),
+                            metadata.deck.clone(),
+                            metadata.sync,
+                            metadata.tags.clone(),
+                        ),
+                        blank_line: blank_line.clone(),
+                        flashcard: FlashCard {
+                            raw: flashcard.raw.clone(),
+                            front: flashcard.front.clone(),
+                            back: flashcard.back.clone(),
+                        },
+                    })
+                }
+                // update note from flashcard with metadata
+                BlockWithAnkiAction {
+                    block:
+                        Block::FlashCardWithMeta {
+                            metadata,
+                            blank_line,
+                            flashcard,
+                        },
+                    anki_action: AnkiAction::UpdateNote(_),
+                } if response.result.is_none() && response.error.is_none() => {
+                    Ok(Block::FlashCardWithMeta {
+                        metadata: FlashCardMetaData::from_fields(
+                            metadata.id,
+                            metadata.deck.clone(),
+                            metadata.sync,
+                            metadata.tags.clone(),
+                        ),
+                        blank_line: blank_line.clone(),
+                        flashcard: FlashCard {
+                            raw: flashcard.raw.clone(),
+                            front: flashcard.front.clone(),
+                            back: flashcard.back.clone(),
+                        },
+                    })
+                }
+                _ => Err(format!(
+                    "Unexpected block or Anki response. Block: {:#?}, Response: {:#?}",
+                    self.block, response
+                )),
+            },
+            _ => Ok(self.block.clone()),
         }
     }
 }
