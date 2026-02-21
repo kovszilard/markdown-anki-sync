@@ -71,41 +71,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let new_result_blocks = document_with_anki_actions
+    let (new_result_blocks, created_count, updated_count) = document_with_anki_actions
         .blocks_with_anki_action
         .iter()
-        .flat_map(|block_with_action| {
-            let request = anki_action_to_request_payload(block_with_action);
-            let response = match request {
-                Some(request) => {
-                    let result = ureq::post("http://localhost:8765")
-                        .send_json(&request)
-                        .map(|mut body| body.body_mut().read_json::<Response>())
-                        .flatten();
-                    result.map_or_else(
-                        |err| {
-                            eprintln!(
-                                "Error sending request to AnkiConnect: {:?}, for block: {:#?}",
-                                err, block_with_action.block
-                            );
-                            None
-                        },
-                        |ok| {
-                            println!("Received response from AnkiConnect: {:?}", ok);
-                            Some(ok)
-                        },
-                    )
+        .fold(
+            (Vec::new(), 0u32, 0u32),
+            |(mut blocks, mut created, mut updated), block_with_action| {
+                let request = anki_action_to_request_payload(block_with_action);
+                let response = match request {
+                    Some(request) => {
+                        let result = ureq::post("http://localhost:8765")
+                            .send_json(&request)
+                            .map(|mut body| body.body_mut().read_json::<Response>())
+                            .flatten();
+                        result.map_or_else(|_| None, Some)
+                    }
+                    None => None,
+                };
+                match sync_block_with_anki_response(block_with_action, &response) {
+                    Ok(block) => {
+                        match &block_with_action.anki_action {
+                            AnkiAction::CreateNote(_) => created += 1,
+                            AnkiAction::UpdateNote(_) => updated += 1,
+                            AnkiAction::DoNothing => {}
+                        }
+                        blocks.push(block);
+                    }
+                    Err(err) => {
+                        eprintln!("Error syncing block: {}", err);
+                    }
                 }
-                None => None,
-            };
-            let updated_block = sync_block_with_anki_response(block_with_action, &response);
-            updated_block
-        })
-        .collect::<Vec<_>>();
-    dbg!(doc.blocks.len());
-    dbg!(document_with_anki_actions.blocks_with_anki_action.len());
-    dbg!(new_result_blocks.len());
-    dbg!(doc.blocks.len());
+                (blocks, created, updated)
+            },
+        );
+
+    println!("Created: {}, Updated: {}", created_count, updated_count);
+
     let is_all_ok = new_result_blocks.len() == doc.blocks.len();
     let synced_document: Option<MarkdownDocument> = if is_all_ok {
         Some(MarkdownDocument {
@@ -119,7 +120,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let synced_document = synced_document
         .ok_or_else(|| AppError("Error syncing blocks with Anki responses.".to_string()))?;
 
-    std::fs::write("/tmp/anki-markdown.md", synced_document.raw())?;
+    std::fs::write(filename, synced_document.raw())?;
     Ok(())
 }
 
@@ -137,7 +138,7 @@ fn anki_action_to_request_payload(action: &BlockWithAnkiAction) -> Option<Reques
             block: _,
             anki_action: AnkiAction::UpdateNote(note),
         } => Some(Request {
-            action: "UpdateNote".to_string(),
+            action: "updateNote".to_string(),
             version: 6,
             params: Params { note: note.clone() },
         }),
