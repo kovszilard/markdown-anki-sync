@@ -47,7 +47,7 @@ impl BlockWithAnkiAction {
                         front: front.clone(),
                         back: back.clone(),
                     },
-                    tags: vec!["tag1".to_string(), "tag2".to_string()],
+                    tags: default_tags.clone(),
                 };
 
                 Self {
