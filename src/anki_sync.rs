@@ -104,7 +104,7 @@ impl BlockWithAnkiAction {
     pub fn sync_with_anki_response(&self, response: &Option<Response>) -> Result<Block, String> {
         match response {
             Some(response) => match self {
-                // create note from flashcard
+                // Create a note from flashcard
                 BlockWithAnkiAction {
                     block: Block::FlashCard(FlashCard { raw, front, back }),
                     anki_action: AnkiAction::CreateNote(_),
@@ -120,7 +120,7 @@ impl BlockWithAnkiAction {
                         },
                     })
                 }
-                // create note from flashcard with metadata
+                // Create a note from flashcard with metadata
                 BlockWithAnkiAction {
                     block:
                         Block::FlashCardWithMeta {
@@ -146,7 +146,7 @@ impl BlockWithAnkiAction {
                         },
                     })
                 }
-                // update note from flashcard with metadata
+                // Update note from flashcard with metadata
                 BlockWithAnkiAction {
                     block:
                         Block::FlashCardWithMeta {

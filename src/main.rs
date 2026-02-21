@@ -5,24 +5,7 @@ use notes_to_anki::anki_sync::MarkdownDocumentWithAnkiActions;
 use notes_to_anki::parser::document::parse_document;
 use notes_to_anki::types::MarkdownDocument;
 use std::env;
-use std::error::Error;
 use std::process;
-
-pub struct AppError(String);
-
-impl std::fmt::Display for AppError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl std::fmt::Debug for AppError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for AppError {}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
@@ -111,7 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let synced_document = synced_document
-        .ok_or_else(|| AppError("Error syncing blocks with Anki responses.".to_string()))?;
+        .ok_or("Error syncing blocks with Anki responses.")?;
 
     std::fs::write(filename, synced_document.raw())?;
     Ok(())
