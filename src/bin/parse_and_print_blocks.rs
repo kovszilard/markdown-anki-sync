@@ -1,8 +1,8 @@
+use notes_to_anki::parser::document::parse_document;
+use notes_to_anki::types::Block;
+use notes_to_anki::types::FrontMatter;
 use std::env;
 use std::process;
-
-use notes_to_anki::parser::document::{Block, parse_document};
-use notes_to_anki::parser::front_matter::FrontMatter;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

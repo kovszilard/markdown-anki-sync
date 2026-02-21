@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use crate::document_with_anki_actions::{AnkiAction, BlockWithAnkiAction};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

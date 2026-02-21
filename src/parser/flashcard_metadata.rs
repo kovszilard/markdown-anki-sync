@@ -1,3 +1,4 @@
+use crate::types::FlashCardMetaData;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -8,15 +9,6 @@ use nom::{
     multi::separated_list1,
     sequence::{delimited, preceded},
 };
-
-#[derive(Debug, Clone)]
-pub struct FlashCardMetaData {
-    pub raw: String,
-    pub id: Option<u64>,
-    pub sync: Option<bool>,
-    pub deck: Option<String>,
-    pub tags: Option<Vec<String>>,
-}
 
 enum Field<'a> {
     Id(u64),

@@ -1,4 +1,4 @@
-use crate::parser::flashcard_metadata::FlashCardMetaData;
+use crate::types::FlashCardMetaData;
 
 impl FlashCardMetaData {
     pub fn from_fields(

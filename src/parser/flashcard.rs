@@ -1,3 +1,4 @@
+use crate::types::FlashCard;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -6,13 +7,6 @@ use nom::{
     combinator::{eof, not, recognize, rest, verify},
     multi::many1,
 };
-
-#[derive(Debug, Clone)]
-pub struct FlashCard {
-    pub raw: String,
-    pub front: String,
-    pub back: String,
-}
 
 fn parse_header_hashes(input: &str) -> IResult<&str, u8> {
     let (input, hashes) = verify(take_while1(|c| c == '#'), |s: &str| s.len() <= 6).parse(input)?;

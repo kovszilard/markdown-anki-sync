@@ -1,14 +1,10 @@
+use crate::types::BlankLine;
 use nom::{
     IResult, Parser,
     character::complete::{line_ending, space0},
     combinator::recognize,
     multi::many1,
 };
-
-#[derive(Debug, Clone)]
-pub struct BlankLine {
-    pub raw: String,
-}
 
 pub fn parse_blank_line(input: &str) -> IResult<&str, BlankLine> {
     let (input, raw) = recognize(many1((space0, line_ending))).parse(input)?;

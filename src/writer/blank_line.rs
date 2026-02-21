@@ -1,4 +1,4 @@
-use crate::parser::blank_line::BlankLine;
+use crate::types::BlankLine;
 
 impl BlankLine {
     pub fn empty() -> Self {

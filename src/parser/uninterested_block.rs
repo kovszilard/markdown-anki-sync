@@ -1,3 +1,6 @@
+use super::flashcard::parse_flashcard;
+use super::flashcard_metadata::parse_flashcard_metadata;
+use crate::types::UninterestedBlock;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -5,14 +8,6 @@ use nom::{
     combinator::{eof, not, recognize, rest},
     multi::many1,
 };
-
-use super::flashcard::parse_flashcard;
-use super::flashcard_metadata::parse_flashcard_metadata;
-
-#[derive(Debug, Clone)]
-pub struct UninterestedBlock {
-    pub raw: String,
-}
 
 fn non_special_line(input: &str) -> IResult<&str, &str> {
     let (input, _) = not(eof).parse(input)?;

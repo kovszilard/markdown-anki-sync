@@ -1,7 +1,4 @@
-use crate::parser::{
-    document::{Block, MarkdownDocument},
-    front_matter::FrontMatter,
-};
+use crate::types::{Block, FrontMatter, MarkdownDocument};
 
 impl MarkdownDocument {
     pub fn raw(&self) -> String {

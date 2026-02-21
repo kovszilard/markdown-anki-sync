@@ -1,9 +1,5 @@
 use crate::anki::{BasicModelFields, Note, Response};
-use crate::parser::blank_line::BlankLine;
-use crate::parser::document::Block;
-use crate::parser::flashcard::FlashCard;
-use crate::parser::flashcard_metadata::FlashCardMetaData;
-use crate::parser::front_matter::FrontMatter;
+use crate::types::{BlankLine, Block, FlashCard, FlashCardMetaData, FrontMatter};
 
 #[derive(Debug)]
 pub struct BlockWithAnkiAction {

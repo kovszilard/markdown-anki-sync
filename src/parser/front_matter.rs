@@ -1,3 +1,4 @@
+use crate::types::FrontMatter;
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -7,18 +8,6 @@ use nom::{
     multi::{many0, many1, separated_list1},
     sequence::delimited,
 };
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum FrontMatter {
-    Raw {
-        raw: String,
-    },
-    AnkiSync {
-        raw: String,
-        deck: Option<String>,
-        tags: Vec<String>,
-    },
-}
 
 enum AnkiSyncField {
     Deck(String),

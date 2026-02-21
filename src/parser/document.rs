@@ -1,26 +1,5 @@
+use crate::types::{Block, MarkdownDocument};
 use nom::{IResult, Parser, branch::alt, combinator::opt, multi::many0};
-
-use super::blank_line::BlankLine;
-use super::flashcard::FlashCard;
-use super::flashcard_metadata::FlashCardMetaData;
-use super::front_matter::FrontMatter;
-use super::uninterested_block::UninterestedBlock;
-
-#[derive(Debug, Clone)]
-pub enum Block {
-    FlashCard(FlashCard),
-    FlashCardWithMeta {
-        metadata: FlashCardMetaData,
-        blank_line: Option<BlankLine>,
-        flashcard: FlashCard,
-    },
-    Uninterested(UninterestedBlock),
-}
-
-pub struct MarkdownDocument {
-    pub front_matter: Option<FrontMatter>,
-    pub blocks: Vec<Block>,
-}
 
 pub fn parse_document(input: &str) -> IResult<&str, MarkdownDocument> {
     let (input, front_matter) = opt(super::front_matter::parse_front_matter).parse(input)?;
@@ -61,6 +40,8 @@ pub fn parse_document(input: &str) -> IResult<&str, MarkdownDocument> {
 
 #[cfg(test)]
 mod tests {
+    use crate::types::FrontMatter;
+
     use super::*;
     use indoc::indoc;
 
@@ -263,9 +244,7 @@ mod tests {
         assert_eq!(doc.blocks.len(), 2);
 
         match &doc.blocks[0] {
-            Block::FlashCardWithMeta {
-                flashcard, ..
-            } => {
+            Block::FlashCardWithMeta { flashcard, .. } => {
                 assert_eq!(flashcard.back, "A systems programming language.\n");
                 assert_eq!(
                     flashcard.raw,
@@ -276,9 +255,7 @@ mod tests {
         }
 
         match &doc.blocks[1] {
-            Block::FlashCardWithMeta {
-                flashcard, ..
-            } => {
+            Block::FlashCardWithMeta { flashcard, .. } => {
                 assert_eq!(flashcard.back, "A parser combinator library.\n");
                 assert_eq!(
                     flashcard.raw,
