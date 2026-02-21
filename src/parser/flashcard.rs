@@ -47,6 +47,7 @@ fn non_terminator_line(header_level: u8) -> impl FnMut(&str) -> IResult<&str, &s
     move |input: &str| {
         let (input, _) = not(eof).parse(input)?;
         let (input, _) = not(terminating_header(header_level)).parse(input)?;
+        let (input, _) = not(super::flashcard_metadata::parse_flashcard_metadata).parse(input)?;
         alt((recognize((not_line_ending, line_ending)), rest)).parse(input)
     }
 }

@@ -204,6 +204,92 @@ mod tests {
     }
 
     #[test]
+    fn test_two_flashcards_both_with_metadata() {
+        let input = indoc! {"
+            <!-- anki_id: 100, anki_deck: DeckA -->
+            ## Q: What is Rust?
+            A systems programming language.
+
+            <!-- anki_id: 200, anki_deck: DeckB -->
+            ## Q: What is Nom?
+            A parser combinator library.
+        "};
+        let (rest, doc) = parse_document(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(doc.blocks.len(), 2);
+
+        match &doc.blocks[0] {
+            Block::FlashCardWithMeta {
+                metadata,
+                flashcard,
+                ..
+            } => {
+                assert_eq!(metadata.id, Some(100));
+                assert_eq!(metadata.deck.as_deref(), Some("DeckA"));
+                assert_eq!(flashcard.front, "What is Rust?");
+                assert_eq!(flashcard.back, "A systems programming language.\n");
+            }
+            _ => panic!("Expected Block::FlashCardWithMeta for first card"),
+        }
+
+        match &doc.blocks[1] {
+            Block::FlashCardWithMeta {
+                metadata,
+                flashcard,
+                ..
+            } => {
+                assert_eq!(metadata.id, Some(200));
+                assert_eq!(metadata.deck.as_deref(), Some("DeckB"));
+                assert_eq!(flashcard.front, "What is Nom?");
+                assert_eq!(flashcard.back, "A parser combinator library.\n");
+            }
+            _ => panic!("Expected Block::FlashCardWithMeta for second card"),
+        }
+    }
+
+    #[test]
+    fn test_back_has_no_trailing_newlines_raw_preserves_them() {
+        let input = indoc! {"
+            <!-- anki_id: 100 -->
+            ## Q: What is Rust?
+            A systems programming language.
+
+            <!-- anki_id: 200 -->
+            ## Q: What is Nom?
+            A parser combinator library.
+        "};
+        let (rest, doc) = parse_document(input).unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(doc.blocks.len(), 2);
+
+        match &doc.blocks[0] {
+            Block::FlashCardWithMeta {
+                flashcard, ..
+            } => {
+                assert_eq!(flashcard.back, "A systems programming language.\n");
+                assert_eq!(
+                    flashcard.raw,
+                    "## Q: What is Rust?\nA systems programming language.\n\n"
+                );
+            }
+            _ => panic!("Expected Block::FlashCardWithMeta for first card"),
+        }
+
+        match &doc.blocks[1] {
+            Block::FlashCardWithMeta {
+                flashcard, ..
+            } => {
+                assert_eq!(flashcard.back, "A parser combinator library.\n");
+                assert_eq!(
+                    flashcard.raw,
+                    "## Q: What is Nom?\nA parser combinator library.\n"
+                );
+            }
+            _ => panic!("Expected Block::FlashCardWithMeta for second card"),
+        }
+    }
+
+    #[test]
     fn test_round_trip() {
         let input = indoc! {"
             ---
