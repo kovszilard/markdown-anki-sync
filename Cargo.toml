@@ -1,5 +1,5 @@
 [package]
-name = "notes-to-anki"
+name = "markdown-anki-sync"
 version = "0.1.0"
 edition = "2024"
 

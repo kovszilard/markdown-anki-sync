@@ -1,6 +1,6 @@
-use notes_to_anki::parser::document::parse_document;
-use notes_to_anki::types::Block;
-use notes_to_anki::types::FrontMatter;
+use markdown_anki_sync::parser::document::parse_document;
+use markdown_anki_sync::types::Block;
+use markdown_anki_sync::types::FrontMatter;
 use std::env;
 use std::process;
 

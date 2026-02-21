@@ -1,6 +1,6 @@
-use notes_to_anki::anki::Response;
-use notes_to_anki::anki_sync::DocumentSyncPlan;
-use notes_to_anki::parser::document::parse_document;
+use markdown_anki_sync::anki::Response;
+use markdown_anki_sync::anki_sync::DocumentSyncPlan;
+use markdown_anki_sync::parser::document::parse_document;
 use std::env;
 use std::process;
 
